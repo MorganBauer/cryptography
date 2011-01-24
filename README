@@ -1,0 +1,18 @@
+to load:
+(load "loader")
+
+run tests
+(run-all-tests)
+should return t if everything runs okay.
+
+Check the 'des-tests.lisp' for usage.
+
+does not have a read a file and encrypt the whole thing yet
+
+only single block encryption
+
+single key, plain DES.
+
+Give it a 64bit key, ignores the parity bits, does not check parity. 
+
+No cipher modes. (i.e. only ecb, but only one block)
