@@ -183,7 +183,7 @@
     (format t "final K+ is hex ~7x, bin ~56b" newkey newkey)
     (let ((highKeyC0 (ldb (byte 28 28) newkey))
           (lowKeyD0 (ldb (byte 28 0) newkey)))
-      (format t "~2&highkey ~28,'0',b ~& lowkey ~28,'0',b" highKeyC0 lowKeyD0)
+      (format t "~2&highkey ~28,'0b ~& lowkey ~28,'0b" highKeyC0 lowKeyD0)
       (values highKeyC0 lowKeyD0))))
 
 
@@ -228,7 +228,7 @@
      for d-key in d-subkeys
      for d-index from 0
      do (format t "~&C~2d = ~28,'0',b~&" c-index c-key)
-     do (format t "~&D~2d = ~28,'0',b~2&" d-index d-key)))
+     do (format t "~&D~2d = ~28,'0b~2&" d-index d-key)))
 
 (defun presubkeys->subkeys (presubkeys)
   "takes a list of presubkeys (i.e. before permuted-choice 2 (+pc-2+))"
@@ -243,7 +243,7 @@
             do (setf oldplace (- 56 oldplace)) ;entering has 56 bits
             do (setf (ldb (byte 1 newplace) newkey) ; set the bit in the new key, to the appropriate value from the appropriate place in the old key, as determined by pc2
                      (ldb (byte 1 oldplace) origkey)))
-         (format t "~&final newkey K~2d is hex ~7,'0',x, bin ~56,'0',b" newkeynum newkey newkey)
+         (format t "~&final newkey K~2d is hex ~7,'0x, bin ~56,'0b" newkeynum newkey newkey)
          newkey)))
 
 
@@ -261,7 +261,7 @@
        do (setf oldplace (- 64 oldplace))      ;entering has 64 bits
        do (setf (ldb (byte 1 newplace) permutation) ; set the bit in the new key, to the appropriate value from the appropriate place in the old key, as determined by pc2
                 (ldb (byte 1 oldplace) message-block)))
-    (format t "~&final permutation is hex ~8,'0',x, bin ~64,'0',b" permutation permutation)
+    (format t "~&final permutation is hex ~8,'0x, bin ~64,'0b" permutation permutation)
     permutation))
 
 (defun inverse-initial-permutation (preoutput-block)
@@ -273,21 +273,21 @@
        do (setf oldplace (- 64 oldplace))      ;entering has 64 bits
        do (setf (ldb (byte 1 newplace) output-block) ; set the bit in the new key, to the appropriate value from the appropriate place in the old key, as determined by pc2
                 (ldb (byte 1 oldplace) preoutput-block)))
-    (format t "~&final output-block is hex ~8,'0',x, bin ~64,'0',b" output-block output-block)
+    (format t "~&final output-block is hex ~8,'0x, bin ~64,'0b" output-block output-block)
     output-block))
 
 (defun encrypt-block (ip subkeys)
   (let ((l0 (ldb (byte 32 32) ip))
         (r0 (ldb (byte 32 0) ip)))
     (format t "beginning feistel rounds~&")
-    (format t "l0 is ~32,'0',b~&" l0)
-    (format t "r0 is ~32,'0',b~&" r0)
+    (format t "l0 is ~32,'0b~&" l0)
+    (format t "r0 is ~32,'0b~&" r0)
     (loop for n from 0 to 15 ;; doing feistel rounds
        for ln-1 = l0 then l ;; remember previous l
        for rn-1 = r0 then r ;; remember previous r
        for l = r0 then rn-1 ;; update l and r
        for r = (logxor l0 (f r0 (nth n subkeys))) then (logxor ln-1 (f rn-1 (nth n subkeys)))
-       do (format t "L~2,'0',d = ~32,'0',b, R~2,'0',d = ~32,'0',b~&" (1+ n) l (1+ n) r)
+       do (format t "L~2,'0d = ~32,'0b, R~2,'0d = ~32,'0b~&" (1+ n) l (1+ n) r)
        finally (return (logior (ash r 32) l)))))
 
 (defun feistel-permutation (sbox-replacements)
@@ -299,7 +299,7 @@
        do (setf oldplace (- 32 oldplace))      ;entering has 32 bits
        do (setf (ldb (byte 1 newplace) f-perm) ; set the bit in the new key, to the appropriate value from the appropriate place in the old key, as determined by pc2
                 (ldb (byte 1 oldplace) sbox-replacements)))
-    ;; (format t "~&final f-perm is hex ~8,'0',x, bin ~32,'0',b" f-perm f-perm)
+    ;; (format t "~&final f-perm is hex ~8,'0x, bin ~32,'0b" f-perm f-perm)
     f-perm))
 
 (defun f (r key)
@@ -310,8 +310,8 @@
           ;; calculate sbox addresses
           (let* ((exp-perm-r (expansion-permutation r))
                  (r-xor-k (logxor exp-perm-r key)))
-            ;;(format t "~&expant permutaion of R is ~48,'0',b" exp-perm-r)
-            ;;(format t "~& key xor exp perm of R is ~48,'0',b" r-xor-k)
+            ;;(format t "~&expant permutaion of R is ~48,'0b" exp-perm-r)
+            ;;(format t "~& key xor exp perm of R is ~48,'0b" r-xor-k)
             (loop
                for x from 7 downto 0 ; loop across, from left to right
                for bs = (byte 6 (* x 6)) ; 6 bits at a time
@@ -321,7 +321,7 @@
         for sbox in +sboxes+
         for x downfrom 28 by 4 to 0
         for replacement = (sbox-replacement addr sbox)
-        ;;do (format t "~&subbing replacement ~6,'0',b @ location ~d~&" replacement x)
+        ;;do (format t "~&subbing replacement ~6,'0b @ location ~d~&" replacement x)
         with final-substitutions = 0
         ;;do (format t "subst is ~32b~&" final-substitutions)
         do (setf (ldb (byte 4 x) final-substitutions)
@@ -344,8 +344,8 @@
        do (setf (ldb (byte 1 newplace) expansion) ; set the bit in the new key, to the appropriate value from the appropriate place in the old key, as determined by pc2
                 (ldb (byte 1 oldplace) block)))
     ;; (format t
-    ;;         "~&final expansion is hex ~6,'0',x
-    ;;                bin ~48,'0',b" expansion expansion)
+    ;;         "~&final expansion is hex ~6,'0x
+    ;;                bin ~48,'0b" expansion expansion)
     expansion))
 
 (defun ecb-encrypt-block (message key)
