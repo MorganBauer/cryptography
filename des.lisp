@@ -7,7 +7,8 @@
    57 49 41 33 25 17  9 1
    59 51 43 35 27 19 11 3
    61 53 45 37 29 21 13 5
-   63 55 47 39 31 23 15 7))
+   63 55 47 39 31 23 15 7)
+  "Initial-permutation carried out on message block")
 
 (defvar +inverse-IP+
   (list
@@ -18,11 +19,12 @@
    36  4  44  12  52 20  60 28
    35  3  43  11  51 19  59 27
    34  2  42  10  50 18  58 26
-   33  1  41   9  49 17  57 25))
+   33  1  41   9  49 17  57 25)
+  "Inverse initial-permutation")
 
 
 (defvar +S1+
-  (list
+ (list
    14  4  13  1   2 15  11  8   3 10   6 12   5  9   0  7
    0  15   7  4  14  2  13  1  10  6  12 11   9  5   3  8
    4   1  14  8  13  6   2 11  15 12   9  7   3 10   5  0
@@ -77,7 +79,9 @@
    7  11   4  1   9 12  14  2   0  6  10 13  15  3   5  8
    2   1  14  7   4 10   8 13  15 12   9  0   3  5   6 11))
 
-(defvar +sboxes+ (list +s1+ +s2+ +s3+ +s4+ +s5+ +s6+ +s7+ +s8+))
+(defvar +sboxes+ 
+  (list +s1+ +s2+ +s3+ +s4+ +s5+ +s6+ +s7+ +s8+)
+  "s-boxes as list for convienience")
 
 (defvar +pc-1+
   (list
@@ -88,7 +92,8 @@
    63 55  47 39  31  23 15
    7  62  54 46  38  30 22
    14  6  61 53  45  37 29
-   21 13   5 28  20  12  4))
+   21 13   5 28  20  12  4)
+  "permuted choice 1")
 
 (defvar +pc-2+
   (list
@@ -99,7 +104,8 @@
    41  52 31  37  47 55
    30  40 51  45  33 48
    44  49 39  56  34 53
-   46  42 50  36  29 32))
+   46  42 50  36  29 32)
+  "permuted choice 2")
 
 (defvar +ep+
   (list
@@ -120,13 +126,17 @@
          2    8  24  14
          32  27   3   9
          19  13  30   6
-         22  11   4  25))
+         22  11   4  25)
+  "permutation on right half of subkey during feistel rounds")
 
 (defun left-circular-shift ()
   "a more specialized version of 'rotate-byte'"
-  (print "Not implemented yet"))
+  (error "Not implemented yet"))
 
 (defun rotate-byte (count bytespec integer)
+  "rotate 'count' bits with byte specifier 'bytespec' in 'integer'
+rotates left with positive values, right with negative
+I did not write this myself. I intend to replace it with the specialized version above, sbcl can use an implementation specific version."
   (let ((size (byte-size bytespec)))
     (when (= size 0)
       (return-from rotate-byte integer))
@@ -234,17 +244,17 @@
   "takes a list of presubkeys (i.e. before permuted-choice 2 (+pc-2+))"
   (loop
      for origkey in presubkeys
-     for newkeynum from 0
+     for subkeynum from 0
      collect
-       (let ((newkey 0))
-         (declare (type (unsigned-byte 48) newkey))
+       (let ((subkey 0))
+         (declare (type (unsigned-byte 48) subkey))
          (loop for oldplace in +pc-2+
             for newplace from (1- (length +pc-2+)) downto 0 ;final is 48 bits
             do (setf oldplace (- 56 oldplace)) ;entering has 56 bits
-            do (setf (ldb (byte 1 newplace) newkey) ; set the bit in the new key, to the appropriate value from the appropriate place in the old key, as determined by pc2
+            do (setf (ldb (byte 1 newplace) subkey) ; set the bit in the new key, to the appropriate value from the appropriate place in the old key, as determined by pc2
                      (ldb (byte 1 oldplace) origkey)))
-         (format t "~&final newkey K~2d is hex ~7,'0x, bin ~56,'0b" newkeynum newkey newkey)
-         newkey)))
+         (format t "~&final subkey K~2d is hex ~7,'0x, bin ~56,'0b" subkeynum subkey subkey)
+         subkey)))
 
 
 (defun key->subkeys (origkey)
